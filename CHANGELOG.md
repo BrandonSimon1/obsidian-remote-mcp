@@ -1,3 +1,7 @@
+### 1.4.3: 2026-09-27
+
+* Reap sessions whose clients disconnect
+
 ### 1.4.2: 2026-08-17
 
 * Simplify the sign-in page

@@ -578,6 +578,14 @@ app.all('/mcp{/*path}', cors, authorizeRequest, async (req, res) => {
   const deadline = watched ? CALL_TIMEOUT_MS : 0;
   const abort = new AbortController();
 
+  // A departed client must release the upstream stream too, or the gateway never
+  // sees the session go idle and its child is never reaped.
+  let reader;
+  res.on('close', () => {
+    abort.abort();
+    reader?.cancel().catch(() => {});
+  });
+
   try {
     const upstream = await withDeadline(
       fetch(url, {
@@ -628,7 +636,7 @@ app.all('/mcp{/*path}', cors, authorizeRequest, async (req, res) => {
       return;
     }
 
-    const reader = upstream.body.getReader();
+    reader = upstream.body.getReader();
     for (;;) {
       // The deadline covers each read, so it measures silence rather than the
       // total time a legitimately slow, chatty call is allowed to take.
