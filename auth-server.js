@@ -680,8 +680,16 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'not_found' });
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`obsidian-mcp auth server on 127.0.0.1:${PORT}`);
+// Hardcoded to 127.0.0.1 upstream because the systemd+nginx setup always
+// puts nginx in front, listening on the real interface and forwarding to
+// this loopback port. On fly.io there is no local nginx: Fly's edge proxy
+// connects to the Machine from outside its network namespace, so the
+// process it forwards to must bind every interface, not just loopback.
+// The equivalent boundary (only this port reachable from outside) is drawn
+// by fly.toml's http_service.internal_port instead of nginx's site config.
+const BIND_HOST = process.env.BIND_HOST || '127.0.0.1';
+app.listen(PORT, BIND_HOST, () => {
+  console.log(`obsidian-mcp auth server on ${BIND_HOST}:${PORT}`);
   console.log(`  issuer:   ${ISSUER}`);
   console.log(`  resource: ${RESOURCE}`);
   console.log(`  upstream: ${UPSTREAM}`);

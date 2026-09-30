@@ -13,6 +13,7 @@ primary_region = "iad"
 
 [env]
   PORT = "8422"
+  BIND_HOST = "0.0.0.0"
   UPSTREAM = "http://127.0.0.1:8420"
   CONFIG_DIR = "/data/config"
   VAULT_PATH = "/data/vault"
