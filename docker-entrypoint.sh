@@ -32,9 +32,31 @@ echo "Starting auth-server.js on :$PORT (issuer: $ISSUER)"
 node auth-server.js &
 AUTH_PID=$!
 
-# If either process dies, tear the whole Machine down so Fly restarts it
-# clean, rather than limping along with only half the pipeline working.
-wait -n "$SUPERGATEWAY_PID" "$AUTH_PID"
+WAIT_PIDS=("$SUPERGATEWAY_PID" "$AUTH_PID")
+
+# Headless Sync: keep $VAULT_PATH current from an Obsidian Sync vault via
+# obsidian-headless. `ob` reads the OBSIDIAN_AUTH_TOKEN env var directly
+# (undocumented but present in its CLI - see TKT-31's Notes), so no
+# interactive `ob login` is needed as long as that secret is set. Skipped
+# entirely when SYNC_REMOTE_VAULT isn't set, so the sandbox can stand up
+# and be read/write-validated against an empty vault before any sync
+# source is wired in, per TKT-31's acceptance criteria.
+if [ -n "$SYNC_REMOTE_VAULT" ]; then
+  if ! node node_modules/.bin/ob sync-status --path "$VAULT_PATH" --json >/dev/null 2>&1; then
+    echo "Setting up headless sync for vault: $SYNC_REMOTE_VAULT"
+    node node_modules/.bin/ob sync-setup --vault "$SYNC_REMOTE_VAULT" --path "$VAULT_PATH" --json
+  fi
+  echo "Starting obsidian-headless continuous sync for vault: $SYNC_REMOTE_VAULT"
+  node node_modules/.bin/ob sync --path "$VAULT_PATH" --continuous &
+  SYNC_PID=$!
+  WAIT_PIDS+=("$SYNC_PID")
+else
+  echo "SYNC_REMOTE_VAULT not set - skipping headless sync, serving \$VAULT_PATH as-is"
+fi
+
+# If any process dies, tear the whole Machine down so Fly restarts it
+# clean, rather than limping along with only part of the pipeline working.
+wait -n "${WAIT_PIDS[@]}"
 EXIT_CODE=$?
-kill "$SUPERGATEWAY_PID" "$AUTH_PID" 2>/dev/null || true
+kill "${WAIT_PIDS[@]}" 2>/dev/null || true
 exit "$EXIT_CODE"

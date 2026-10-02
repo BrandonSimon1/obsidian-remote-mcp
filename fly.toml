@@ -22,6 +22,12 @@ primary_region = "iad"
   # `fly deploy --env` command used.
   # AUTH_SECRET (login password) is a `fly secrets set` value too, not
   # plain env, since it's a credential - see auth-server.js's verifyPassword.
+  # OBSIDIAN_AUTH_TOKEN (headless sync auth, read directly by `ob` - see
+  # TKT-31's Notes) is also a `fly secrets` value, for the same reason.
+  # SYNC_REMOTE_VAULT names the Obsidian Sync vault docker-entrypoint.sh
+  # hands to `ob sync-setup`/`ob sync --continuous`. Unset here on purpose:
+  # set it only once a scratch vault exists to sync against, per TKT-31's
+  # acceptance criteria to validate against a sandbox before the real one.
 
 [[mounts]]
   source = "obsidian_mcp_data"
