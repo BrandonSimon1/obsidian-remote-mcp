@@ -14,14 +14,18 @@ FROM node:22-slim
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+# patches/ is copied alongside package.json (not just left to the later
+# `COPY . .`) because `npm install`'s postinstall runs
+# patches/disable-idle-close.js and patches/fix-edit-note.js immediately -
+# without it present here that install step fails outright, it doesn't
+# just skip the patches.
+COPY package.json package-lock.json* patches ./
 RUN npm install --omit=dev
 
 COPY . .
 
-# postinstall patches (patches/disable-idle-close.js, patches/fix-edit-note.js)
-# already ran during npm install above; re-run defensively in case COPY
-# order ever changes and they get skipped.
+# Re-run defensively in case COPY order ever changes again and the
+# postinstall above ends up skipped.
 RUN node patches/disable-idle-close.js && node patches/fix-edit-note.js
 
 RUN chmod +x docker-entrypoint.sh
