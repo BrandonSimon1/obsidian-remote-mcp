@@ -1,0 +1,45 @@
+# fly.io app config for obsidian-remote-mcp.
+#
+# Deliberately points at a SANDBOX vault/volume first, per TKT-31's own
+# acceptance criteria: "prefer standing it up first against a
+# sandboxed/copy vault or a scratch fly.io volume, and only pointing it at
+# the real vault's sync target once the OAuth flow and read/write path are
+# confirmed working." Do not repoint VAULT_PATH/the mounted volume at the
+# real vault's synced folder until that validation has happened.
+app = "obsidian-remote-mcp-sandbox"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8422"
+  BIND_HOST = "0.0.0.0"
+  UPSTREAM = "http://127.0.0.1:8420"
+  CONFIG_DIR = "/data/config"
+  VAULT_PATH = "/data/vault"
+  # ISSUER is set separately (fly.io assigns the app's *.fly.dev hostname
+  # only after first deploy) — see Notes for the exact `fly secrets set` /
+  # `fly deploy --env` command used.
+
+[[mounts]]
+  source = "obsidian_mcp_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8422
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
