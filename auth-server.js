@@ -97,7 +97,15 @@ function readPasswordHash() {
   }
 }
 
+// AUTH_SECRET lets the login password be provisioned as a platform secret
+// (e.g. `fly secrets set`) instead of requiring an interactive
+// `set-password.js` run against the deployed host. It is compared directly
+// (no scrypt hash file needed) but still via timingSafeEqual, matching the
+// hash-file path below. When set, it takes precedence over any hash file.
 function verifyPassword(candidate) {
+  const secret = process.env.AUTH_SECRET;
+  if (secret) return timingSafeEqualStr(candidate, secret);
+
   const stored = readPasswordHash();
   if (!stored) return false;
   const [salt, expected] = stored.split(':');
@@ -694,5 +702,5 @@ app.listen(PORT, BIND_HOST, () => {
   console.log(`  resource: ${RESOURCE}`);
   console.log(`  upstream: ${UPSTREAM}`);
   console.log(`  call timeout: ${CALL_TIMEOUT_MS}ms`);
-  if (!readPasswordHash()) console.warn('  WARNING: no password hash set - /authorize will reject everything');
+  if (!process.env.AUTH_SECRET && !readPasswordHash()) console.warn('  WARNING: no password hash set - /authorize will reject everything');
 });

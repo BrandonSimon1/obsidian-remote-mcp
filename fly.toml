@@ -20,6 +20,8 @@ primary_region = "iad"
   # ISSUER is set separately (fly.io assigns the app's *.fly.dev hostname
   # only after first deploy) — see Notes for the exact `fly secrets set` /
   # `fly deploy --env` command used.
+  # AUTH_SECRET (login password) is a `fly secrets set` value too, not
+  # plain env, since it's a credential - see auth-server.js's verifyPassword.
 
 [[mounts]]
   source = "obsidian_mcp_data"
