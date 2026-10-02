@@ -18,8 +18,12 @@ WORKDIR /app
 # `COPY . .`) because `npm install`'s postinstall runs
 # patches/disable-idle-close.js and patches/fix-edit-note.js immediately -
 # without it present here that install step fails outright, it doesn't
-# just skip the patches.
-COPY package.json package-lock.json* patches ./
+# just skip the patches. (Copied as its own COPY, not folded into the one
+# above: `COPY <dir> ./` copies a directory's *contents* into the
+# destination, not the directory itself, so patches/*.js would otherwise
+# land at /app/*.js instead of /app/patches/*.js.)
+COPY package.json package-lock.json* ./
+COPY patches ./patches
 RUN npm install --omit=dev
 
 COPY . .
