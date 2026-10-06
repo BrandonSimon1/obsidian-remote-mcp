@@ -41,10 +41,20 @@ WAIT_PIDS=("$SUPERGATEWAY_PID" "$AUTH_PID")
 # entirely when SYNC_REMOTE_VAULT isn't set, so the sandbox can stand up
 # and be read/write-validated against an empty vault before any sync
 # source is wired in, per TKT-31's acceptance criteria.
-if [ -n "$SYNC_REMOTE_VAULT" ]; then
+#
+# `ob sync-setup` additionally needs the vault's end-to-end encryption
+# password (--password), which has no env-var escape hatch the way the
+# auth token does - it only accepts the flag or an interactive prompt. We
+# pass it via SYNC_PASSWORD, read straight off the Machine's own env, so
+# it's never typed into a shell history or a terminal transcript. If
+# SYNC_REMOTE_VAULT is set without SYNC_PASSWORD, skip sync rather than
+# crash-looping forever on "Password not provided."
+if [ -n "$SYNC_REMOTE_VAULT" ] && [ -z "$SYNC_PASSWORD" ]; then
+  echo "SYNC_REMOTE_VAULT set but SYNC_PASSWORD is not - skipping headless sync, serving \$VAULT_PATH as-is"
+elif [ -n "$SYNC_REMOTE_VAULT" ]; then
   if ! node node_modules/.bin/ob sync-status --path "$VAULT_PATH" --json >/dev/null 2>&1; then
     echo "Setting up headless sync for vault: $SYNC_REMOTE_VAULT"
-    node node_modules/.bin/ob sync-setup --vault "$SYNC_REMOTE_VAULT" --path "$VAULT_PATH" --json
+    node node_modules/.bin/ob sync-setup --vault "$SYNC_REMOTE_VAULT" --path "$VAULT_PATH" --password "$SYNC_PASSWORD" --device-name "fly-$FLY_APP_NAME" --json
   fi
   echo "Starting obsidian-headless continuous sync for vault: $SYNC_REMOTE_VAULT"
   node node_modules/.bin/ob sync --path "$VAULT_PATH" --continuous &
