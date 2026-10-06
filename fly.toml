@@ -28,6 +28,9 @@ primary_region = "iad"
   # hands to `ob sync-setup`/`ob sync --continuous`. Unset here on purpose:
   # set it only once a scratch vault exists to sync against, per TKT-31's
   # acceptance criteria to validate against a sandbox before the real one.
+  # SYNC_PASSWORD (the vault's end-to-end encryption password) is also a
+  # `fly secrets` value - `ob sync-setup` has no other non-interactive way
+  # to take it, see docker-entrypoint.sh's comment.
 
 [[mounts]]
   source = "obsidian_mcp_data"
