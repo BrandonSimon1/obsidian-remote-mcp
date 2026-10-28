@@ -19,6 +19,7 @@
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
+    "obsidian-headless": "^0.0.14",
     "obsidian-mcp": "^1.0.6",
     "supergateway": "^3.4.3"
   }
